@@ -5,13 +5,13 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="parfor",
-    version="2020.08.1",
+    version="2020.08.3",
     author="Wim Pomp",
     author_email="wimpomp@gmail.com",
     description="A package to mimic the use of parfor as done in Matlab.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="",
+    url="https://github.com/wimpomp/parfor",
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 2.7",
@@ -20,4 +20,5 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     python_requires='>=2.7',
+    install_requires=['tqdm', 'dill'],
 )
