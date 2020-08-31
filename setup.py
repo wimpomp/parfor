@@ -1,0 +1,23 @@
+import setuptools
+
+with open("README.md", "r") as fh:
+    long_description = fh.read()
+
+setuptools.setup(
+    name="parfor",
+    version="2020.08.1",
+    author="Wim Pomp",
+    author_email="wimpomp@gmail.com",
+    description="A package to mimic the use of parfor as done in Matlab.",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    url="",
+    packages=setuptools.find_packages(),
+    classifiers=[
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+        "Operating System :: OS Independent",
+    ],
+    python_requires='>=2.7',
+)
