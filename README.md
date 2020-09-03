@@ -2,7 +2,8 @@
 Used to parallelize for-loops using parfor in Matlab? This package allows you to do the same in python.
 Take any normal serial but parallelizable for-loop and execute it in parallel using easy syntax.
 Don't worry about the technical details of using the multiprocessing module, race conditions, queues,
-parfor handles all that.
+parfor handles all that. Also, parfor uses dill instead of pickle, so that a lot more objects can be used
+when parallelizing.
 
 Tested on linux on python 2.7 and 3.8
 
@@ -14,14 +15,20 @@ an iterator.
 tqdm, dill
 
 ## Limitations
-Some objects cannot be passed and or used in child processes. Such objects include objects relying on
-java-bridge. Examples include reader objects from the python-bioformats package.
+Objects passed to the pool need to be dillable (dill needs to serialize them). Generators and SwigPyObjects are examples
+of objects that cannot be used. They can be used however, for the iterator argument when using parfor, but its
+iterations need to be dillable. You might be able to make objects dillable anyhow using dill.register.
 
-### Required arguments:
+The function evaluated in parallel needs to terminate. If parfor hangs after seeming to complete the task, it probably
+is because the individual processes cannot terminate. Importing javabridge (used in python-bioformats) and starting the
+java virtual machine can cause it to hang since the processes only terminate after the java vm has quit.
+
+## Arguments
+### Required:
     fun:      function taking arguments: iteration from  iterable, other arguments defined in args & kwargs
     iterable: iterable from which an item is given to fun as a first argument
 
-### Optional arguments:
+### Optional:
     args:   tuple with other unnamed arguments to fun
     kwargs: dict with other named arguments to fun
     length: give the length of the iterator in cases where len(iterator) results in an error
@@ -32,7 +39,7 @@ java-bridge. Examples include reader objects from the python-bioformats package.
     serial: switch to serial if number of tasks less than serial, default: 4
     debug:  if an error occurs in an iteration, return the erorr instead of retrying in the main process
 
-### Output
+### Return
     list with results from applying the decorated function to each iteration of the iterator
     specified as the first argument to the function
 
