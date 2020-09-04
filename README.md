@@ -2,13 +2,17 @@
 Used to parallelize for-loops using parfor in Matlab? This package allows you to do the same in python.
 Take any normal serial but parallelizable for-loop and execute it in parallel using easy syntax.
 Don't worry about the technical details of using the multiprocessing module, race conditions, queues,
-parfor handles all that. Also, parfor uses dill instead of pickle, so that a lot more objects can be used
-when parallelizing.
+parfor handles all that. 
 
 Tested on linux on python 2.7 and 3.8
 
+## Why is parfor better than just using multiprocessing?
+- Easy to use
+- Using dill instead of pickle: a lot more objects can be used when parallelizing
+- Progress bars are built-in
+
 ## Usage
-Parfor decorates a functions and returns the result of that function evaluated for each iteration of
+Parfor decorates a functions and returns the result of that function evaluated in parallel for each iteration of
 an iterator.
 
 ## Requires
@@ -21,7 +25,8 @@ iterations need to be dillable. You might be able to make objects dillable anyho
 
 The function evaluated in parallel needs to terminate. If parfor hangs after seeming to complete the task, it probably
 is because the individual processes cannot terminate. Importing javabridge (used in python-bioformats) and starting the
-java virtual machine can cause it to hang since the processes only terminate after the java vm has quit.
+java virtual machine can cause it to hang since the processes only terminate after the java vm has quit. In this case,
+pass terminator=javabridge.kill_vm to parfor.
 
 ## Arguments
 ### Required:
