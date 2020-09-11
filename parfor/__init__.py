@@ -348,7 +348,10 @@ class parpool(object):
 
     def _qbar_update(self):
         if not self.qbar is None:
-            self.qbar.n = self.Qi.qsize()
+            try:
+                self.qbar.n = self.Qi.qsize()
+            except:
+                pass
 
     def __setitem__(self, handle, n):
         """ Add new iteration. """

@@ -4,7 +4,7 @@ Take any normal serial but parallelizable for-loop and execute it in parallel us
 Don't worry about the technical details of using the multiprocessing module, race conditions, queues,
 parfor handles all that. 
 
-Tested on linux on python 2.7 and 3.8
+Tested on linux on python 2.7 and 3.8 and on Windows and OSX on python 3.8.
 
 ## Why is parfor better than just using multiprocessing?
 - Easy to use
@@ -27,6 +27,8 @@ The function evaluated in parallel needs to terminate. If parfor hangs after see
 is because the individual processes cannot terminate. Importing javabridge (used in python-bioformats) and starting the
 java virtual machine can cause it to hang since the processes only terminate after the java vm has quit. In this case,
 pass terminator=javabridge.kill_vm to parfor.
+
+On OSX the buffer bar does not work due to limitations of the OS.
 
 ## Arguments
 ### Required:
