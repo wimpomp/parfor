@@ -118,8 +118,8 @@ def chunks(n, *args):
     """ Yield successive n-sized chunks from lists. """
     A = len(args)==1
     N = len(args[0])
-    n = int(round(N/round(N/n)))
-    for i in range(0, N, n):
+    n = int(round(N/max(1, round(N/n))))
+    for i in range(0, N, n) if N else []:
         if A:
             yield args[0][i:i+n]
         else:

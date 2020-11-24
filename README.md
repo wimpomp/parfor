@@ -11,6 +11,9 @@ Tested on linux on python 2.7 and 3.8 and on Windows and OSX on python 3.8.
 - Using dill instead of pickle: a lot more objects can be used when parallelizing
 - Progress bars are built-in
 
+## Installation
+pip install parfor
+
 ## Usage
 Parfor decorates a functions and returns the result of that function evaluated in parallel for each iteration of
 an iterator.
