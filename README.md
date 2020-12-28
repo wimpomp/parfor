@@ -57,6 +57,7 @@ On OSX the buffer bar does not work due to limitations of the OS.
 ### Normal serial for loop
     <<
     from time import sleep
+
     a = 3
     fun = []
     for i in range(10):
@@ -66,7 +67,7 @@ On OSX the buffer bar does not work due to limitations of the OS.
 
     >> [0, 3, 12, 27, 48, 75, 108, 147, 192, 243]
     
-### Using parfor on the same loop
+### Using parfor to parallelize
     <<
     from time import sleep
     from parfor import parfor
@@ -84,6 +85,40 @@ On OSX the buffer bar does not work due to limitations of the OS.
         sleep(1)
         return a*i**2
     print(fun)
+
+    >> [0, 3, 12, 27, 48, 75, 108, 147, 192, 243]
+
+### Using parfor in a script/module/.py-file
+Parfor should never be executed during the import phase of a .py-file. To prevent that from happening
+use the `if __name__ == '__main__':` structure:
+
+    <<
+    from time import sleep
+    from parfor import parfor
+    
+    if __name__ == '__main__':
+        @parfor(range(10), (3,))
+        def fun(i, a):
+            sleep(1)
+            return a*i**2
+        print(fun)
+
+    >> [0, 3, 12, 27, 48, 75, 108, 147, 192, 243]    
+or:
+
+    <<
+    from time import sleep
+    from parfor import parfor
+    
+    def my_fun(*args, **kwargs):
+        @parfor(range(10), (3,))
+        def fun(i, a):
+            sleep(1)
+            return a*i**2
+        return fun
+    
+    if __name__ == '__main__':
+        print(my_fun())
 
     >> [0, 3, 12, 27, 48, 75, 108, 147, 192, 243]
 
