@@ -45,7 +45,9 @@ On OSX the buffer bar does not work due to limitations of the OS.
     desc:   string with description of the progress bar
     bar:    bool enable progress bar
     pbar:   bool enable buffer indicator bar
-    nP:     number of workers, default: number of cpu's/3
+    rP:     ratio workers to cpu cores, default: 1
+    nP:     number of workers, default, None, overrides rP if not None
+        number of workers will always be at least 2
     serial: switch to serial if number of tasks less than serial, default: 4
     debug:  if an error occurs in an iteration, return the erorr instead of retrying in the main process
 

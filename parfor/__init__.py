@@ -167,6 +167,7 @@ def parfor(*args, **kwargs):
             pbar:   bool enable buffer indicator bar
             rP:     ratio workers to cpu cores, default: 1
             nP:     number of workers, default: None, overrides rP if not None
+                number of workers will always be at least 2
             serial: switch to serial if number of tasks less than serial, default: 4
             debug:  if an error occurs in an iteration, return the erorr instead of retrying in the main process
 
@@ -251,6 +252,7 @@ class parpool(object):
             self.nP = int(round(rP * multiprocessing.cpu_count()))
         else:
             self.nP = int(nP)
+        self.nP = max(self.nP, 2)
         self.fun = fun or (lambda x: x)
         self.args = args or ()
         self.kwargs = kwargs or {}
