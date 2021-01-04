@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="parfor",
-    version="2020.12.28",
+    version="2021.1.4",
     author="Wim Pomp",
     author_email="wimpomp@gmail.com",
     description="A package to mimic the use of parfor as done in Matlab.",
@@ -20,5 +20,5 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     python_requires='>=2.7',
-    install_requires=['tqdm', 'dill'],
+    install_requires=['tqdm>=4.50.0', 'dill>=0.3.0'],
 )

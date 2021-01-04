@@ -151,7 +151,7 @@ class tqdmm(tqdm):
         super(tqdmm, self).__exit__(exc_type, exc_value, traceback)
 
 def parfor(*args, **kwargs):
-    """ @parfor(iterator=None, args=(), kwargs={}, length=None, desc=None, bar=True, qbar=True, np1/3 serial=4, debug=False):
+    """ @parfor(iterator=None, args=(), kwargs={}, length=None, desc=None, bar=True, qbar=True, rP=1/3, serial=4, debug=False):
         decorator to parallize for-loops
 
         required arguments:
@@ -165,7 +165,8 @@ def parfor(*args, **kwargs):
             desc:   string with description of the progress bar
             bar:    bool enable progress bar
             pbar:   bool enable buffer indicator bar
-            nP:     number of workers, default: number of cpu's/3
+            rP:     ratio workers to cpu cores, default: 1
+            nP:     number of workers, default: None, overrides rP if not None
             serial: switch to serial if number of tasks less than serial, default: 4
             debug:  if an error occurs in an iteration, return the erorr instead of retrying in the main process
 
@@ -238,14 +239,16 @@ class parpool(object):
     """ Parallel processing with addition of iterations at any time and request of that result any time after that.
         The target function and its argument can be changed at any time.
     """
-    def __init__(self, fun=None, args=None, kwargs=None, nP=0.33, bar=None, qbar=None, terminator=None, debug=False):
-        """ fun, args, kwargs: target function and its arguments and keyword arguments.
-            nP: number of workers, or fraction of cpu cores to use, default: 0.33.
-            bar, qbar: instances of tqdm and tqdmm to use for monitoring buffer and progress. """
-        if nP is None:
-            self.nP = int(multiprocessing.cpu_count()/3)
-        elif nP<1:
-            self.nP = int(nP*multiprocessing.cpu_count())
+    def __init__(self, fun=None, args=None, kwargs=None, rP=None, nP=None, bar=None, qbar=None, terminator=None,
+                 debug=False):
+        """ fun, args, kwargs: target function and its arguments and keyword arguments
+            rP: ratio workers to cpu cores, default: 1
+            nP: number of workers, default, None, overrides rP if not None
+            bar, qbar: instances of tqdm and tqdmm to use for monitoring buffer and progress """
+        if rP is None and nP is None:
+            self.nP = int(multiprocessing.cpu_count())
+        elif nP is None:
+            self.nP = int(round(rP * multiprocessing.cpu_count()))
         else:
             self.nP = int(nP)
         self.fun = fun or (lambda x: x)
@@ -267,7 +270,7 @@ class parpool(object):
         self.bar = bar
         self.qbar = qbar
         if not self.qbar is None:
-            self.qbar.total = 3*nP
+            self.qbar.total = 3*self.nP
 
     @property
     def fun(self):
@@ -445,7 +448,7 @@ class parpool(object):
             return obj
 
 def pmap(fun, iterable=None, args=None, kwargs=None, length=None, desc=None, bar=True, qbar=False, terminator=None,
-         nP=0.33, serial=4, debug=False):
+         rP=1, nP=None, serial=4, debug=False):
     """ map a function fun to each iteration in iterable
             best use: iterable is a generator and length is given to this function
 
@@ -458,7 +461,8 @@ def pmap(fun, iterable=None, args=None, kwargs=None, length=None, desc=None, bar
         bar:    bool enable progress bar
         pbar:   bool enable buffer indicator bar
         terminator: function which is executed in each worker after all the work is done
-        nP:     number of workers, default: number of cpu's/3
+        rP:     ratio workers to cpu cores, default: 1
+        nP:     number of workers, default, None, overrides rP if not None
         serial: switch to serial if number of tasks less than serial, default: 4
         debug:  if an error occurs in an iteration, return the erorr instead of retrying in the main process
     """
@@ -473,7 +477,7 @@ def pmap(fun, iterable=None, args=None, kwargs=None, length=None, desc=None, bar
     else:                        #parallel case
         with tqdmm(total=0, desc='Task buffer', disable=not qbar, leave=False) as qbar,\
              tqdm(total=length, desc=desc, disable=not bar) as bar:
-            with parpool(fun, args, kwargs, nP, bar, qbar, terminator, debug) as p:
+            with parpool(fun, args, kwargs, rP, nP, bar, qbar, terminator, debug) as p:
                 length = 0
                 for i, j in enumerate(iterable): #add work to the queue
                     p[i] = j
