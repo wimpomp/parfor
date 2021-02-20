@@ -475,7 +475,7 @@ def pmap(fun, iterable=None, args=None, kwargs=None, length=None, desc=None, bar
     except:
         pass
     if length and length<serial: #serial case
-        return [fun(c, *args, **kwargs) for c in iterable]
+        return [fun(c, *args, **kwargs) for c in tqdm(iterable, total=length, desc=desc, disable=not bar)]
     else:                        #parallel case
         with tqdmm(total=0, desc='Task buffer', disable=not qbar, leave=False) as qbar,\
              tqdm(total=length, desc=desc, disable=not bar) as bar:
