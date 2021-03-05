@@ -380,6 +380,14 @@ class parpool(object):
         self.handles.remove(handle)
         return self.res.pop(handle)
 
+    def get_newest(self):
+         """ Request the newest key and result and delete its record. Wait if result not yet available. """
+         if len(self.handles):
+            while not len(self.res):
+                self._getfromq()
+            key = list(self.res.keys())[0]
+            return key, self[key]
+
     def __delitem__(self, handle):
         self[handle]
 
