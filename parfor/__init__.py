@@ -116,7 +116,7 @@ def dumps(obj, protocol=None, byref=None, fmode=None, recurse=True, **kwds):
     return file.getvalue()
 
 
-def chunks(*args, **kwargs):
+class chunks():
     """ Yield successive chunks from lists.
         Usage: chunks(s, list0, list1, ...)
                chunks(list0, list1, ..., s=s)
@@ -125,21 +125,31 @@ def chunks(*args, **kwargs):
         n: number of chunks, coerced to 1 <= n <= len(list0)
         both s and n are given: use n, unless the chunk size would be bigger than s
     """
-    N = len(args[-1])
-    if 's' in kwargs and 'n' in kwargs:
-        n = kwargs['n'] if N < kwargs['s'] * kwargs['n'] else round(N / kwargs['s'])
-    elif 's' in kwargs:  # size of chunks
-        n = round(N / kwargs['s'])
-    elif 'n' in kwargs:  # number of chunks
-        n = kwargs['n']
-    else:  # size of chunks in 1st argument
-        s, *args = args
-        n = round(N / s)
-    A = len(args) == 1
-    n = max(1, min(N, n))
-    for i in range(n):
-        p, q = (i * N // n), ((i + 1) * N // n)
-        yield args[0][p:q] if A else [a[p:q] for a in args]
+
+    def __init__(self, *args, **kwargs):
+        N = min(*[len(a) for a in args]) if len(args) > 1 else len(args[0])
+        if 's' in kwargs and 'n' in kwargs:
+            n = kwargs['n'] if N < kwargs['s'] * kwargs['n'] else round(N / kwargs['s'])
+        elif 's' in kwargs:  # size of chunks
+            n = round(N / kwargs['s'])
+        elif 'n' in kwargs:  # number of chunks
+            n = kwargs['n']
+        else:  # size of chunks in 1st argument
+            s, *args = args
+            N = min(*[len(a) for a in args]) if len(args) > 1 else len(args[0])
+            n = round(N / s)
+        self.args = args
+        self.A = len(args) == 1
+        self.N = N
+        self.n = max(1, min(N, n))
+
+    def __iter__(self):
+        for i in range(self.n):
+            p, q = (i * self.N // self.n), ((i + 1) * self.N // self.n)
+            yield self.args[0][p:q] if self.A else [a[p:q] for a in self.args]
+
+    def __len__(self):
+        return self.n
 
 
 class tqdmm(tqdm):
