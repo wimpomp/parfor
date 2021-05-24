@@ -116,16 +116,30 @@ def dumps(obj, protocol=None, byref=None, fmode=None, recurse=True, **kwds):
     return file.getvalue()
 
 
-def chunks(n, *args):
-    """ Yield successive n-sized chunks from lists. """
+def chunks(*args, **kwargs):
+    """ Yield successive chunks from lists.
+        Usage: chunks(s, list0, list1, ...)
+               chunks(list0, list1, ..., s=s)
+               chunks(list0, list1, ..., n=n)
+        s: size of chunks, might change to optimize devision between chunks
+        n: number of chunks, coerced to 1 <= n <= len(list0)
+        both s and n are given: use n, unless the chunk size would be bigger than s
+    """
+    N = len(args[-1])
+    if 's' in kwargs and 'n' in kwargs:
+        n = kwargs['n'] if N < kwargs['s'] * kwargs['n'] else round(N / kwargs['s'])
+    elif 's' in kwargs:  # size of chunks
+        n = round(N / kwargs['s'])
+    elif 'n' in kwargs:  # number of chunks
+        n = kwargs['n']
+    else:  # size of chunks in 1st argument
+        s, *args = args
+        n = round(N / s)
     A = len(args) == 1
-    N = len(args[0])
-    n = int(round(N/max(1, round(N/n))))
-    for i in range(0, N, n) if N else []:
-        if A:
-            yield args[0][i:i+n]
-        else:
-            yield [a[i:i+n] for a in args]
+    n = max(1, min(N, n))
+    for i in range(n):
+        p, q = (i * N // n), ((i + 1) * N // n)
+        yield args[0][p:q] if A else [a[p:q] for a in args]
 
 
 class tqdmm(tqdm):
