@@ -127,12 +127,14 @@ class chunks():
     """
 
     def __init__(self, *args, **kwargs):
-        N = min(*[len(a) for a in args]) if len(args) > 1 else len(args[0])
         if 's' in kwargs and 'n' in kwargs:
+            N = min(*[len(a) for a in args]) if len(args) > 1 else len(args[0])
             n = kwargs['n'] if N < kwargs['s'] * kwargs['n'] else round(N / kwargs['s'])
         elif 's' in kwargs:  # size of chunks
+            N = min(*[len(a) for a in args]) if len(args) > 1 else len(args[0])
             n = round(N / kwargs['s'])
         elif 'n' in kwargs:  # number of chunks
+            N = min(*[len(a) for a in args]) if len(args) > 1 else len(args[0])
             n = kwargs['n']
         else:  # size of chunks in 1st argument
             s, *args = args
