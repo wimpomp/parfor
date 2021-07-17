@@ -17,6 +17,7 @@ except ImportError:
         from StringIO import StringIO
 
 failed_rv = (lambda *args, **kwargs: None, ())
+cpu_count = int(multiprocessing.cpu_count())
 
 
 class Pickler(dill.Pickler):
@@ -121,21 +122,25 @@ class chunks():
         Usage: chunks(s, list0, list1, ...)
                chunks(list0, list1, ..., s=s)
                chunks(list0, list1, ..., n=n)
+               chunks(list0, list1, ..., r=r)
         s: size of chunks, might change to optimize devision between chunks
         n: number of chunks, coerced to 1 <= n <= len(list0)
+        r: number of chunks / number of cpus, coerced to 1 <= n <= len(list0)
         both s and n are given: use n, unless the chunk size would be bigger than s
+        both r and n are given: use n
     """
 
     def __init__(self, *args, **kwargs):
-        if 's' in kwargs and 'n' in kwargs:
+        if 's' in kwargs and ('n' in kwargs or 'r' in kwargs):
             N = min(*[len(a) for a in args]) if len(args) > 1 else len(args[0])
-            n = kwargs['n'] if N < kwargs['s'] * kwargs['n'] else round(N / kwargs['s'])
+            n = kwargs['n'] if 'n' in kwargs else int(cpu_count * kwargs['r'])
+            n = n if N < kwargs['s'] * n else round(N / kwargs['s'])
         elif 's' in kwargs:  # size of chunks
             N = min(*[len(a) for a in args]) if len(args) > 1 else len(args[0])
             n = round(N / kwargs['s'])
-        elif 'n' in kwargs:  # number of chunks
+        elif 'n' in kwargs or 'r' in kwargs:  # number of chunks
             N = min(*[len(a) for a in args]) if len(args) > 1 else len(args[0])
-            n = kwargs['n']
+            n = kwargs['n'] if 'n' in kwargs else int(cpu_count * kwargs['r'])
         else:  # size of chunks in 1st argument
             s, *args = args
             N = min(*[len(a) for a in args]) if len(args) > 1 else len(args[0])
@@ -277,9 +282,9 @@ class parpool(object):
             nP: number of workers, default, None, overrides rP if not None
             bar, qbar: instances of tqdm and tqdmm to use for monitoring buffer and progress """
         if rP is None and nP is None:
-            self.nP = int(multiprocessing.cpu_count())
+            self.nP = cpu_count
         elif nP is None:
-            self.nP = int(round(rP * multiprocessing.cpu_count()))
+            self.nP = int(round(rP * cpu_count))
         else:
             self.nP = int(nP)
         self.nP = max(self.nP, 2)
