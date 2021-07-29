@@ -126,7 +126,7 @@ class chunks():
         s: size of chunks, might change to optimize devision between chunks
         n: number of chunks, coerced to 1 <= n <= len(list0)
         r: number of chunks / number of cpus, coerced to 1 <= n <= len(list0)
-        both s and n are given: use n, unless the chunk size would be bigger than s
+        both s and n or r are given: use n or r, unless the chunk size would be bigger than s
         both r and n are given: use n
     """
 
@@ -158,6 +158,39 @@ class chunks():
 
     def __len__(self):
         return self.len
+
+
+class external_bar:
+    def __init__(self, iterable=None, callback=None, total=0):
+        self.iterable = iterable
+        self.callback = callback
+        self.total = total
+        self._n = 0
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        return
+
+    def __iter__(self):
+        for n, item in enumerate(self.iterable):
+            yield item
+            self.n = n + 1
+
+    def update(self, n=1):
+        self.n += n
+
+    @property
+    def n(self):
+        return self._n
+
+    @n.setter
+    def n(self, n):
+        if n != self._n:
+            self._n = n
+            if self.callback is not None:
+                self.callback(n)
 
 
 class tqdmm(tqdm):
@@ -199,8 +232,8 @@ def parfor(*args, **kwargs):
             kwargs: dict with other named arguments to fun
             length: give the length of the iterator in cases where len(iterator) results in an error
             desc:   string with description of the progress bar
-            bar:    bool enable progress bar
-            pbar:   bool enable buffer indicator bar
+            bar:    bool enable progress bar, or a function taking the number of passed iterations as an argument
+            pbar:   bool enable buffer indicator bar, or a function taking the queue size as an argument
             rP:     ratio workers to cpu cores, default: 1
             nP:     number of workers, default: None, overrides rP if not None
                 number of workers will always be at least 2
@@ -529,8 +562,8 @@ def pmap(fun, iterable=None, args=None, kwargs=None, length=None, desc=None, bar
         kwargs: dict with other named arguments to fun
         length: give the length of the iterator in cases where len(iterator) results in an error
         desc:   string with description of the progress bar
-        bar:    bool enable progress bar
-        pbar:   bool enable buffer indicator bar
+        bar:    bool enable progress bar, or a callback function taking the number of passed iterations as an argument
+        pbar:   bool enable buffer indicator bar, or a callback function taking the queue size as an argument
         terminator: function which is executed in each worker after all the work is done
         rP:     ratio workers to cpu cores, default: 1
         nP:     number of workers, default, None, overrides rP if not None
@@ -543,13 +576,17 @@ def pmap(fun, iterable=None, args=None, kwargs=None, length=None, desc=None, bar
     except Exception:
         pass
     if length and length < serial:  # serial case
-        return [fun(c, *args, **kwargs) for c in tqdm(iterable, total=length, desc=desc, disable=not bar)]
+        if callable(bar):
+            return [fun(c, *args, **kwargs) for c in external_bar(iterable, bar)]
+        elif bar is False:
+            return [fun(c, *args, **kwargs) for c in tqdm(iterable, total=length, desc=desc, disable=not bar)]
     else:                           # parallel case
         chunk = isinstance(iterable, chunks)
         if chunk:
             length = iterable.N
-        with tqdmm(total=0, desc='Task buffer', disable=not qbar, leave=False) as qbar,\
-             tqdm(total=length, desc=desc, disable=not bar) as bar:
+        with external_bar(callback=qbar) if callable(qbar) \
+                else tqdmm(total=0, desc='Task buffer', disable=not qbar, leave=False) as qbar, \
+             external_bar(callback=bar) if callable(bar) else tqdm(total=length, desc=desc, disable=not bar) as bar:
             with parpool(fun, args, kwargs, rP, nP, bar, qbar, terminator) as p:
                 length = 0
                 for i, j in enumerate(iterable):  # add work to the queue

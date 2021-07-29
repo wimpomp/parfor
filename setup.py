@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="parfor",
-    version="2021.7.0",
+    version="2021.7.1",
     author="Wim Pomp",
     author_email="wimpomp@gmail.com",
     description="A package to mimic the use of parfor as done in Matlab.",
