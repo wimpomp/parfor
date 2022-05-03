@@ -162,5 +162,5 @@ More low-level accessibility to parallel execution. Submit tasks and request the
 (although necessarily submit first, then request a specific task), use different functions and function
 arguments for different tasks.
 
-## Tqdmm
+## TqdmMeter
 Meter bar, inherited from tqdm, used for displaying buffers.
