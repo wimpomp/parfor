@@ -114,12 +114,13 @@ class ExternalBar:
 class TqdmMeter(tqdm):
     """ Overload tqdm to make a special version of tqdm functioning as a meter. """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, iterable=None, desc=None, total=None, *args, **kwargs):
         self._n = 0
+        self._total = total
         self.disable = False
         if 'bar_format' not in kwargs and len(args) < 16:
             kwargs['bar_format'] = '{desc}{bar}{n}/{total}'
-        super().__init__(*args, **kwargs)
+        super().__init__(iterable, desc, total, *args, **kwargs)
 
     @property
     def n(self):
@@ -130,6 +131,16 @@ class TqdmMeter(tqdm):
         if not value == self.n:
             self._n = int(value)
             self.refresh()
+
+    @property
+    def total(self):
+        return self._total
+
+    @total.setter
+    def total(self, value):
+        self._total = value
+        if hasattr(self, 'container'):
+            self.container.children[1].max = value
 
     def __exit__(self, exc_type=None, exc_value=None, traceback=None):
         if not self.leave:
@@ -457,9 +468,11 @@ class Parpool:
         """ Request the newest key and result and delete its record. Wait if result not yet available. """
         while len(self.tasks):
             self._get_from_queue()
-            for task in self.tasks:
+            for task in self.tasks.values():
                 if task.done:
-                    return task.handle, task.result
+                    handle, result = task.handle, task.result
+                    self.tasks.pop(handle)
+                    return handle, result
 
     def __delitem__(self, handle):
         self.tasks.pop(handle)
