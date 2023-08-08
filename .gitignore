@@ -1,4 +1,6 @@
 /build/
 /dist/
 /parfor.egg-info/
-.idea
+/.idea/
+/.pytest_cache/
+._*

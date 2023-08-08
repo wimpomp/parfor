@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "parfor"
+version = "2023.8.0"
+description = "A package to mimic the use of parfor as done in Matlab."
+authors = ["Wim Pomp <wimpomp@gmail.com>"]
+license = "GPLv3"
+readme = "README.md"
+keywords = ["parfor", "concurrency", "multiprocessing", "parallel"]
+repository = "https://gitlab.rhpc.nki.nl/LenstraLab/LiveCellAnalysis"
+
+[tool.poetry.dependencies]
+python = "^3.5"
+tqdm = ">=4.50.0"
+dill = ">=0.3.0"
+psutil = "*"
+pytest = { version = "*", optional = true }
+
+[tool.poetry.extras]
+test = ["pytest"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
