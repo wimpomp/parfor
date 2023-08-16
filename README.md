@@ -19,18 +19,13 @@ Parfor decorates a functions and returns the result of that function evaluated i
 an iterator.
 
 ## Requires
-tqdm, dill, psutil
+tqdm, dill
 
 ## Limitations
 Objects passed to the pool need to be dillable (dill needs to serialize them). Generators and SwigPyObjects are examples
 of objects that cannot be used. They can be used however, for the iterator argument when using parfor, but its
 iterations need to be dillable. You might be able to make objects dillable anyhow using `dill.register` or with
 `__reduce__`, `__getstate__`, etc.
-
-The function evaluated in parallel needs to terminate. If parfor hangs after seeming to complete the task, it probably
-is because the individual processes cannot terminate. Importing javabridge (used in python-bioformats) and starting the
-java virtual machine can cause it to hang since the processes only terminate after the java vm has quit. In this case,
-pass terminator=javabridge.kill_vm to parfor.
 
 On OSX the buffer bar does not work due to limitations of the OS.
 
@@ -47,7 +42,6 @@ On OSX the buffer bar does not work due to limitations of the OS.
     bar:    bool enable progress bar,
                 or a callback function taking the number of passed iterations as an argument
     pbar:   bool enable buffer indicator bar, or a callback function taking the queue size as an argument
-    terminator: function which is executed in each worker after all the work is done
     rP:     ratio workers to cpu cores, default: 1
     nP:     number of workers, default, None, overrides rP if not None
     serial: execute in series instead of parallel if True, None (default): let pmap decide
