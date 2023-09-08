@@ -1,5 +1,5 @@
 import pytest
-from parfor import Chunks, parfor, Parpool, pmap
+from parfor import Chunks, ParPool, parfor, pmap
 
 
 class SequenceIterator:
@@ -48,7 +48,7 @@ def test_parpool():
     def fun(i, j, k):
         return i * j * k
 
-    with Parpool(fun, (3,), {'k': 2}) as pool:
+    with ParPool(fun, (3,), {'k': 2}) as pool:
         for i in range(10):
             pool[i] = i
 

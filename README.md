@@ -1,10 +1,12 @@
+[![pytest](https://github.com/wimpomp/parfor/actions/workflows/pytest.yml/badge.svg)](https://github.com/wimpomp/parfor/actions/workflows/pytest.yml)
+
 # Parfor
 Used to parallelize for-loops using parfor in Matlab? This package allows you to do the same in python.
 Take any normal serial but parallelizable for-loop and execute it in parallel using easy syntax.
 Don't worry about the technical details of using the multiprocessing module, race conditions, queues,
 parfor handles all that. 
 
-Tested on linux on python 3.8 and 3.10 and on Windows and OSX on python 3.8.
+Tested on linux, Windows and OSX with python 3.10.
 
 ## Why is parfor better than just using multiprocessing?
 - Easy to use
@@ -26,8 +28,6 @@ Objects passed to the pool need to be dillable (dill needs to serialize them). G
 of objects that cannot be used. They can be used however, for the iterator argument when using parfor, but its
 iterations need to be dillable. You might be able to make objects dillable anyhow using `dill.register` or with
 `__reduce__`, `__getstate__`, etc.
-
-On OSX the buffer bar does not work due to limitations of the OS.
 
 ## Arguments
 ### Required:
@@ -154,10 +154,7 @@ The function parfor decorates, use it like `map`.
 ## `Chunks`
 Split a long iterator in bite-sized chunks to parallelize
 
-## `Parpool`
+## `ParPool`
 More low-level accessibility to parallel execution. Submit tasks and request the result at any time,
 (although necessarily submit first, then request a specific task), use different functions and function
 arguments for different tasks.
-
-## `TqdmMeter`
-Meter bar, inherited from tqdm, used for displaying buffers.

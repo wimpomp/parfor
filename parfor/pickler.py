@@ -1,7 +1,7 @@
-import dill
-from pickle import PicklingError, dispatch_table
 from io import BytesIO
+from pickle import PicklingError, dispatch_table
 
+import dill
 
 failed_rv = (lambda *args, **kwargs: None, ())
 loads = dill.loads
