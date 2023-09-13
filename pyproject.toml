@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "parfor"
-version = "2023.8.3"
+version = "2023.9.0"
 description = "A package to mimic the use of parfor as done in Matlab."
 authors = ["Wim Pomp <wimpomp@gmail.com>"]
 license = "GPLv3"

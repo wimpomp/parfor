@@ -1,6 +1,7 @@
 import multiprocessing
 from collections import OrderedDict
 from contextlib import ExitStack
+from copy import copy
 from functools import wraps
 from os import getpid
 from traceback import format_exc
@@ -254,11 +255,19 @@ class ParPool:
             new_handle = handle
         if new_handle in self:
             raise ValueError(f'handle {new_handle} already present')
-        self.last_task = Task(self.id, fun or self.last_task.fun, args or self.last_task.args,
-                              kwargs or self.last_task.kwargs, new_handle, n)
-        self.tasks[new_handle] = self.last_task
+        new_task = copy(self.last_task)
+        if fun is not None:
+            new_task.fun = fun
+        if args is not None:
+            new_task.args = args
+        if kwargs is not None:
+            new_task.kwargs = kwargs
+        new_task.handle = new_handle
+        new_task.n = n
+        self.tasks[new_handle] = new_task
+        self.last_task = new_task
+        self.spool.add_task(new_task)
         self.bar_lengths[new_handle] = barlength
-        self.spool.add_task(self.last_task)
         if handle is None:
             return new_handle
 
