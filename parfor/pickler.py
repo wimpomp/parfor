@@ -1,16 +1,28 @@
+import copyreg
 from io import BytesIO
-from pickle import PicklingError, dispatch_table
+from pickle import PicklingError
 
 import dill
 
-failed_rv = (lambda *args, **kwargs: None, ())
 loads = dill.loads
 
 
+class CouldNotBePickled:
+    def __init__(self, class_name):
+        self.class_name = class_name
+
+    def __repr__(self):
+        return f"Item of type '{self.class_name}' could not be pickled and was omitted."
+
+    @classmethod
+    def reduce(cls, item):
+        return cls, (type(item).__name__,)
+
+
 class Pickler(dill.Pickler):
-    """ Overload dill to ignore unpickleble parts of objects.
+    """ Overload dill to ignore unpicklable parts of objects.
         You probably didn't want to use these parts anyhow.
-        However, if you did, you'll have to find some way to make them pickleble.
+        However, if you did, you'll have to find some way to make them picklable.
     """
     def save(self, obj, save_persistent_id=True):
         """ Copied from pickle and amended. """
@@ -43,7 +55,7 @@ class Pickler(dill.Pickler):
 
             # Check private dispatch table if any, or else
             # copyreg.dispatch_table
-            reduce = getattr(self, 'dispatch_table', dispatch_table).get(t)
+            reduce = getattr(self, 'dispatch_table', copyreg.dispatch_table).get(t)
             if reduce is not None:
                 rv = reduce(obj)
             else:
@@ -66,14 +78,14 @@ class Pickler(dill.Pickler):
                             raise PicklingError("Can't pickle %r object: %r" %
                                                 (t.__name__, obj))
                 except Exception:
-                    rv = failed_rv
+                    rv = CouldNotBePickled.reduce(obj)
 
         # Check for string returned by reduce(), meaning "save as global"
         if isinstance(rv, str):
             try:
                 self.save_global(obj, rv)
             except Exception:
-                self.save_global(obj, failed_rv)
+                self.save_global(obj, CouldNotBePickled.reduce(obj))
             return
 
         # Assert that reduce() returned a tuple
@@ -90,7 +102,7 @@ class Pickler(dill.Pickler):
         try:
             self.save_reduce(obj=obj, *rv)
         except Exception:
-            self.save_reduce(obj=obj, *failed_rv)
+            self.save_reduce(obj=obj, *CouldNotBePickled.reduce(obj))
 
 
 def dumps(obj, protocol=None, byref=None, fmode=None, recurse=True, **kwds):
