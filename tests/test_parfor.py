@@ -1,5 +1,6 @@
 import pytest
 from parfor import Chunks, ParPool, parfor, pmap
+from dataclasses import dataclass
 
 
 class SequenceIterator:
@@ -68,3 +69,21 @@ def test_pmap():
         return i * j * k
 
     assert pmap(fun, range(10), (3,), {'k': 2}) == [0, 6, 12, 18, 24, 30, 36, 42, 48, 54]
+
+
+def test_id_reuse():
+    def fun(i):
+        return i[0].a
+
+    @dataclass
+    class T:
+        a: int = 3
+
+    def gen(total):
+        for i in range(total):
+            t = T(i)
+            yield t
+            del t
+
+    a = pmap(fun, Chunks(gen(1000), size=1, length=1000), total=1000)
+    assert all([i == j for i, j in enumerate(a)])
