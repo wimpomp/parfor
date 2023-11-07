@@ -81,7 +81,10 @@ class SharedMemory(UserDict):
     def garbage_collect(self):
         """ clean up the cache """
         for item_id in set(self.cache) - set(self.data.keys()):
-            self.references[item_id] -= 1
+            if item_id in self.references:
+                self.references[item_id] -= 1
+            else:
+                self.references[item_id] = 0
             if self.trash_can is not None and item_id not in self.trash_can:
                 self.trash_can[item_id] = self.cache[item_id]
             del self.cache[item_id]
