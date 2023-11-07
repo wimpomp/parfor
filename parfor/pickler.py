@@ -77,14 +77,14 @@ class Pickler(dill.Pickler):
                         else:
                             raise PicklingError("Can't pickle %r object: %r" %
                                                 (t.__name__, obj))
-                except Exception:
+                except Exception:  # noqa
                     rv = CouldNotBePickled.reduce(obj)
 
         # Check for string returned by reduce(), meaning "save as global"
         if isinstance(rv, str):
             try:
                 self.save_global(obj, rv)
-            except Exception:
+            except Exception:  # noqa
                 self.save_global(obj, CouldNotBePickled.reduce(obj))
             return
 
@@ -101,7 +101,7 @@ class Pickler(dill.Pickler):
         # Save the reduce() output and finally memoize the object
         try:
             self.save_reduce(obj=obj, *rv)
-        except Exception:
+        except Exception:  # noqa
             self.save_reduce(obj=obj, *CouldNotBePickled.reduce(obj))
 
 

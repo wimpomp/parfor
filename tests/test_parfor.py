@@ -46,7 +46,7 @@ def test_chunks(iterator):
 
 
 def test_parpool():
-    def fun(i, j, k):
+    def fun(i, j, k):  # noqa
         return i * j * k
 
     with ParPool(fun, (3,), {'k': 2}) as pool:
