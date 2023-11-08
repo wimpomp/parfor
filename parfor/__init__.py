@@ -18,12 +18,13 @@ class SharedMemory(UserDict):
         super().__init__()
         self.data = manager.dict()  # item_id: dilled representation of object
         self.references = manager.dict()  # item_id: counter
+        self.references_lock = manager.RLock()
         self.cache = {}  # item_id: object
         self.trash_can = {}
         self.pool_ids = {}  # item_id: {(pool_id, task_handle), ...}
 
     def __getstate__(self):
-        return self.data, self.references
+        return self.data, self.references, self.references_lock
 
     def __setitem__(self, item_id, value):
         if item_id not in self:  # values will not be changed
@@ -31,10 +32,11 @@ class SharedMemory(UserDict):
                 self.data[item_id] = False, value
             except Exception:  # only use our pickler when necessary # noqa
                 self.data[item_id] = True, dumps(value, recurse=True)
-            if item_id in self.references:
-                self.references[item_id] += 1
-            else:
-                self.references[item_id] = 1
+            with self.references_lock:
+                try:
+                    self.references[item_id] += 1
+                except KeyError:
+                    self.references[item_id] = 1
             self.cache[item_id] = value  # the id of the object will not be reused as long as the object exists
 
     def add_item(self, item, pool_id, task_handle):
@@ -62,7 +64,7 @@ class SharedMemory(UserDict):
 
     # worker functions
     def __setstate__(self, state):
-        self.data, self.references = state
+        self.data, self.references, self.references_lock = state
         self.cache = {}
         self.trash_can = None
 
@@ -71,20 +73,22 @@ class SharedMemory(UserDict):
             dilled, value = self.data[item_id]
             if dilled:
                 value = loads(value)
-            if item_id in self.references:
-                self.references[item_id] += 1
-            else:
-                self.references[item_id] = 1
+            with self.references_lock:
+                if item_id in self.references:
+                    self.references[item_id] += 1
+                else:
+                    self.references[item_id] = 1
             self.cache[item_id] = value
         return self.cache[item_id]
 
     def garbage_collect(self):
         """ clean up the cache """
         for item_id in set(self.cache) - set(self.data.keys()):
-            if item_id in self.references:
-                self.references[item_id] -= 1
-            else:
-                self.references[item_id] = 0
+            with self.references_lock:
+                try:
+                    self.references[item_id] -= 1
+                except KeyError:
+                    self.references[item_id] = 0
             if self.trash_can is not None and item_id not in self.trash_can:
                 self.trash_can[item_id] = self.cache[item_id]
             del self.cache[item_id]
