@@ -3,6 +3,7 @@ from collections import UserDict
 from contextlib import ExitStack
 from functools import wraps
 from os import getpid
+from time import time
 from traceback import format_exc
 from warnings import warn
 
@@ -18,7 +19,7 @@ class SharedMemory(UserDict):
         super().__init__()
         self.data = manager.dict()  # item_id: dilled representation of object
         self.references = manager.dict()  # item_id: counter
-        self.references_lock = manager.RLock()
+        self.references_lock = manager.Lock()
         self.cache = {}  # item_id: object
         self.trash_can = {}
         self.pool_ids = {}  # item_id: {(pool_id, task_handle), ...}
@@ -362,7 +363,12 @@ class ParPool:
 
 
 class PoolSingleton:
+    """ There can be only one pool at a time, but the pool can be restarted by calling close() and then constructing a
+        new pool. The pool will close itself after 10 minutes of idle time. """
     def __new__(cls, *args, **kwargs):
+        if hasattr(cls, 'instance') and cls.instance is not None:  # noqa restart if any workers have shut down
+            if cls.instance.n_workers.value < cls.instance.n_processes:
+                cls.instance.close()
         if not hasattr(cls, 'instance') or cls.instance is None or not cls.instance.is_alive:  # noqa
             new = super().__new__(cls)
             new.n_processes = cpu_count
@@ -493,7 +499,8 @@ class Worker:
 
     def __call__(self):
         pid = getpid()
-        while not self.event.is_set():
+        last_active_time = time()
+        while not self.event.is_set() and time() - last_active_time < 600:
             try:
                 task = self.queue_in.get(True, 0.02)
                 try:
@@ -502,6 +509,7 @@ class Worker:
                 except Exception:  # noqa
                     self.add_to_queue('task_error', task.pool_id, task.handle, format_exc())
                 self.shared_memory.garbage_collect()
+                last_active_time = time()
             except (multiprocessing.queues.Empty, KeyboardInterrupt):  # noqa
                 pass
             except Exception:  # noqa
@@ -510,7 +518,7 @@ class Worker:
                 self.shared_memory.garbage_collect()
         for child in multiprocessing.active_children():
             child.kill()
-        with self.n_workers.get_lock():
+        with self.n_workers:
             self.n_workers.value -= 1
 
 
