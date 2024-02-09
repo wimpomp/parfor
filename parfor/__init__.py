@@ -396,8 +396,8 @@ class PoolSingleton:
     def __getstate__(self):
         raise RuntimeError(f'Cannot pickle {self.__class__.__name__} object.')
 
-    def __del__(self):
-        self.close()
+    # def __del__(self):
+    #     self.close()
 
     def remove_pool(self, pool_id):
         self.shared_memory.remove_pool(pool_id)
@@ -491,6 +491,8 @@ class PoolSingleton:
 
 class Worker:
     """ Manages executing the target function which will be executed in different processes. """
+    nested = False
+
     def __init__(self, shared_memory: SharedMemory, queue_in, queue_out, n_workers, event):
         self.shared_memory = shared_memory
         self.queue_in = queue_in
@@ -507,6 +509,7 @@ class Worker:
                 continue
 
     def __call__(self):
+        Worker.nested = True
         pid = getpid()
         last_active_time = time()
         while not self.event.is_set() and time() - last_active_time < 600:
@@ -626,7 +629,7 @@ def pmap(fun, iterable=None, args=None, kwargs=None, total=None, desc=None, bar=
         bar_kwargs['desc'] = desc
     if 'disable' not in bar_kwargs:
         bar_kwargs['disable'] = not bar
-    if serial is True or (serial is None and len(iterable) < min(cpu_count, 4)):  # serial case
+    if serial is True or (serial is None and len(iterable) < min(cpu_count, 4)) or Worker.nested:  # serial case
         if callable(bar):
             return sum([chunk_fun(c, *args, **kwargs) for c in ExternalBar(iterable, bar)], [])
         else:
@@ -635,7 +638,7 @@ def pmap(fun, iterable=None, args=None, kwargs=None, total=None, desc=None, bar=
         with ExitStack() as stack:
             if callable(bar):
                 bar = stack.enter_context(ExternalBar(callback=bar))  # noqa
-            elif bar is True:
+            else:
                 bar = stack.enter_context(tqdm(**bar_kwargs))  # noqa
             with ParPool(chunk_fun, args, kwargs, bar) as p:
                 for i, (j, l) in enumerate(zip(iterable, iterable.lengths)):  # add work to the queue
