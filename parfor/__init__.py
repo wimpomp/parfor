@@ -448,45 +448,48 @@ class PoolSingleton:
                     pool.tasks.pop(handle)
                     return handle, result
 
-    def close(self):
-        self.__class__.instance = None
+    @classmethod
+    def close(cls):
+        if hasattr(cls, 'instance') and cls.instance is not None:
+            instance = cls.instance
+            cls.instance = None
 
-        def empty_queue(queue):
-            try:
+            def empty_queue(queue):
+                try:
+                    if not queue._closed:  # noqa
+                        while not queue.empty():
+                            try:
+                                queue.get(True, 0.02)
+                            except multiprocessing.queues.Empty:  # noqa
+                                pass
+                except OSError:
+                    pass
+
+            def close_queue(queue):
+                empty_queue(queue)
                 if not queue._closed:  # noqa
-                    while not queue.empty():
-                        try:
-                            queue.get(True, 0.02)
-                        except multiprocessing.queues.Empty:  # noqa
-                            pass
-            except OSError:
-                pass
+                    queue.close()
+                queue.join_thread()
 
-        def close_queue(queue):
-            empty_queue(queue)
-            if not queue._closed:  # noqa
-                queue.close()
-            queue.join_thread()
-
-        if self.is_alive:
-            self.is_alive = False  # noqa
-            self.event.set()
-            self.pool.close()
-            t = time()
-            while self.n_workers.value:  # noqa
-                empty_queue(self.queue_in)  # noqa
-                empty_queue(self.queue_out)  # noqa
-                if time() - t > 10:
-                    warn(f'Parfor: Closing pool timed out, {self.n_workers.value} processes still alive.')  # noqa
-                    self.pool.terminate()
-                    break
-            empty_queue(self.queue_in)  # noqa
-            empty_queue(self.queue_out)  # noqa
-            self.pool.join()
-            close_queue(self.queue_in)  # noqa
-            close_queue(self.queue_out)  # noqa
-            self.manager.shutdown()
-            self.handle = 0  # noqa
+            if instance.is_alive:
+                instance.is_alive = False  # noqa
+                instance.event.set()
+                instance.pool.close()
+                t = time()
+                while instance.n_workers.value:  # noqa
+                    empty_queue(instance.queue_in)  # noqa
+                    empty_queue(instance.queue_out)  # noqa
+                    if time() - t > 10:
+                        warn(f'Parfor: Closing pool timed out, {instance.n_workers.value} processes still alive.')  # noqa
+                        instance.pool.terminate()
+                        break
+                empty_queue(instance.queue_in)  # noqa
+                empty_queue(instance.queue_out)  # noqa
+                instance.pool.join()
+                close_queue(instance.queue_in)  # noqa
+                close_queue(instance.queue_out)  # noqa
+                instance.manager.shutdown()
+                instance.handle = 0  # noqa
 
 
 class Worker:
