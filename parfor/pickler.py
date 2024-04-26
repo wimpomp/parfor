@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import copyreg
 from io import BytesIO
 from pickle import PicklingError
+from typing import Any, Callable
 
 import dill
 
@@ -8,14 +11,14 @@ loads = dill.loads
 
 
 class CouldNotBePickled:
-    def __init__(self, class_name):
+    def __init__(self, class_name: str) -> None:
         self.class_name = class_name
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"Item of type '{self.class_name}' could not be pickled and was omitted."
 
     @classmethod
-    def reduce(cls, item):
+    def reduce(cls, item: Any) -> tuple[Callable[[str], CouldNotBePickled], tuple[str]]:
         return cls, (type(item).__name__,)
 
 
@@ -24,7 +27,7 @@ class Pickler(dill.Pickler):
         You probably didn't want to use these parts anyhow.
         However, if you did, you'll have to find some way to make them picklable.
     """
-    def save(self, obj, save_persistent_id=True):
+    def save(self, obj: Any, save_persistent_id: bool = True) -> None:
         """ Copied from pickle and amended. """
         self.framer.commit_frame()
 
@@ -93,8 +96,8 @@ class Pickler(dill.Pickler):
             raise PicklingError("%s must return string or tuple" % reduce)
 
         # Assert that it returned an appropriately sized tuple
-        l = len(rv)
-        if not (2 <= l <= 6):
+        length = len(rv)
+        if not (2 <= length <= 6):
             raise PicklingError("Tuple returned by %s must have "
                                 "two to six elements" % reduce)
 
@@ -105,11 +108,12 @@ class Pickler(dill.Pickler):
             self.save_reduce(obj=obj, *CouldNotBePickled.reduce(obj))
 
 
-def dumps(obj, protocol=None, byref=None, fmode=None, recurse=True, **kwds):
+def dumps(obj: Any, protocol: str = None, byref: bool = None, fmode: str = None, recurse: bool = True,
+          **kwds: Any) -> bytes:
     """pickle an object to a string"""
     protocol = dill.settings['protocol'] if protocol is None else int(protocol)
     _kwds = kwds.copy()
     _kwds.update(dict(byref=byref, fmode=fmode, recurse=recurse))
-    file = BytesIO()
-    Pickler(file, protocol, **_kwds).dump(obj)
-    return file.getvalue()
+    with BytesIO() as file:
+        Pickler(file, protocol, **_kwds).dump(obj)
+        return file.getvalue()

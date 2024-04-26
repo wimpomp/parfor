@@ -1,6 +1,8 @@
-import pytest
-from parfor import Chunks, ParPool, parfor, pmap
 from dataclasses import dataclass
+
+import pytest
+
+from parfor import Chunks, ParPool, parfor, pmap
 
 
 class SequenceIterator:

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "parfor"
-version = "2024.3.0"
+version = "2024.4.0"
 description = "A package to mimic the use of parfor as done in Matlab."
 authors = ["Wim Pomp <wimpomp@gmail.com>"]
 license = "GPLv3"
@@ -9,13 +9,16 @@ keywords = ["parfor", "concurrency", "multiprocessing", "parallel"]
 repository = "https://github.com/wimpomp/parfor"
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.10"
 tqdm = ">=4.50.0"
 dill = ">=0.3.0"
 pytest = { version = "*", optional = true }
 
 [tool.poetry.extras]
 test = ["pytest"]
+
+[tool.isort]
+line_length = 119
 
 [build-system]
 requires = ["poetry-core"]
