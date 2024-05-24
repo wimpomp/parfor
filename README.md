@@ -13,6 +13,17 @@ Tested on linux, Windows and OSX with python 3.10.
 - Using dill instead of pickle: a lot more objects can be used when parallelizing
 - Progress bars are built-in
 
+## How it works
+The work you want parfor to do is divided over a number of processes. These processes are started by parfor and put
+together in a pool. This pool is reused when you want parfor to do more work, or shut down when no new work arrives
+within 10 minutes.
+
+A handle to each bit of work is put in a queue from which the workers take work. The objects needed to do the work are
+stored in a memory manager in serialized form (using dill) and the manager hands out an object to a worker when the
+worker is requesting it. The manager deletes objects automatically when they're not needed anymore.
+
+When the work is done the result is sent back for collection in the main process.
+
 ## Installation
 `pip install parfor`
 
@@ -41,13 +52,11 @@ iterations need to be dillable. You might be able to make objects dillable anyho
     desc:   string with description of the progress bar
     bar:    bool enable progress bar,
                 or a callback function taking the number of passed iterations as an argument
-    pbar:   bool enable buffer indicator bar, or a callback function taking the queue size as an argument
-    rP:     ratio workers to cpu cores, default: 1
-    nP:     number of workers, default, None, overrides rP if not None
     serial: execute in series instead of parallel if True, None (default): let pmap decide
-    qsize:  maximum size of the task queue
     length: deprecated alias for total
-    **bar_kwargs: keywords arguments for tqdm.tqdm
+    n_processes: number of processes to use,
+        the parallel pool will be restarted if the current pool does not have the right number of processes
+    **bar_kwargs: keyword arguments for tqdm.tqdm
 
 ### Return
     list with results from applying the function 'fun' to each iteration of the iterable / iterator
@@ -149,7 +158,7 @@ Since generators don't have a predefined length, give parfor the length (total) 
     
 # Extra's
 ## `pmap`
-The function parfor decorates, use it like `map`.
+The function parfor decorates, it's used similarly to `map`.
 
 ## `Chunks`
 Split a long iterator in bite-sized chunks to parallelize
