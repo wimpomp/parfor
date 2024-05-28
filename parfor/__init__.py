@@ -375,7 +375,8 @@ class PoolSingleton:
     def __new__(cls, n_processes: int = None, *args: Any, **kwargs: Any) -> PoolSingleton:
         # restart if any workers have shut down or if we want to have a different number of processes
         if cls.instance is not None:
-            if cls.instance.n_workers.value < cls.instance.n_processes or cls.instance.n_processes != n_processes:
+            if (cls.instance.n_workers.value < cls.instance.n_processes or
+                    cls.instance.n_processes != (n_processes or cpu_count)):
                 cls.instance.close()
         if cls.instance is None or not cls.instance.is_alive:
             new = super().__new__(cls)
