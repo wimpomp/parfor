@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import multiprocessing
 from collections import UserDict
-from contextlib import ExitStack
+from contextlib import ExitStack, redirect_stderr, redirect_stdout
 from functools import wraps
 from os import getpid
 from time import time
@@ -531,7 +531,8 @@ class Worker:
                 task = self.queue_in.get(True, 0.02)
                 try:
                     self.add_to_queue('started', task.pool_id, task.handle, pid)
-                    self.add_to_queue('done', task.pool_id, task(self.shared_memory))
+                    with redirect_stdout(None), redirect_stderr(None):
+                        self.add_to_queue('done', task.pool_id, task(self.shared_memory))
                 except Exception:  # noqa
                     self.add_to_queue('task_error', task.pool_id, task.handle, format_exc())
                 self.shared_memory.garbage_collect()
