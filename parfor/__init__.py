@@ -4,7 +4,8 @@ import multiprocessing
 from collections import UserDict
 from contextlib import ExitStack, redirect_stderr, redirect_stdout
 from functools import wraps
-from os import getpid
+from importlib.metadata import version
+from os import devnull, getpid
 from time import time
 from traceback import format_exc
 from typing import Any, Callable, Hashable, Iterable, Iterator, NoReturn, Optional, Protocol, Sized, TypeVar
@@ -15,6 +16,7 @@ from tqdm.auto import tqdm
 from .pickler import dumps, loads
 
 cpu_count = int(multiprocessing.cpu_count())
+__version__ = version('parfor')
 
 
 Result = TypeVar('Result')
@@ -531,7 +533,7 @@ class Worker:
                 task = self.queue_in.get(True, 0.02)
                 try:
                     self.add_to_queue('started', task.pool_id, task.handle, pid)
-                    with redirect_stdout(None), redirect_stderr(None):
+                    with redirect_stdout(open(devnull, 'w')), redirect_stderr(open(devnull, 'w')):
                         self.add_to_queue('done', task.pool_id, task(self.shared_memory))
                 except Exception:  # noqa
                     self.add_to_queue('task_error', task.pool_id, task.handle, format_exc())
