@@ -6,7 +6,7 @@ Take any normal serial but parallelizable for-loop and execute it in parallel us
 Don't worry about the technical details of using the multiprocessing module, race conditions, queues,
 parfor handles all that. 
 
-Tested on linux, Windows and OSX with python 3.10.
+Tested on linux, Windows and OSX with python 3.10 and 3.12.
 
 ## Why is parfor better than just using multiprocessing?
 - Easy to use
@@ -56,6 +56,8 @@ iterations need to be dillable. You might be able to make objects dillable anyho
     length: deprecated alias for total
     n_processes: number of processes to use,
         the parallel pool will be restarted if the current pool does not have the right number of processes
+    yield_ordered: return the result in the same order as the iterable
+    yield_index: return the index of the result too
     **bar_kwargs: keyword arguments for tqdm.tqdm
 
 ### Return
@@ -158,7 +160,10 @@ Since generators don't have a predefined length, give parfor the length (total) 
     
 # Extra's
 ## `pmap`
-The function parfor decorates, it's used similarly to `map`.
+The function parfor decorates, it's used similarly to `map`, it returns a list with the results.
+
+## `gmap`
+Same as pmap, but returns a generator. Useful to use the result as soon as it's generated.
 
 ## `Chunks`
 Split a long iterator in bite-sized chunks to parallelize
