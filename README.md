@@ -72,7 +72,7 @@ iterations need to be dillable. You might be able to make objects dillable anyho
     fun = []
     for i in range(10):
         sleep(1)
-        fun.append(a*i**2)
+        fun.append(a * i ** 2)
     print(fun)
 
     >> [0, 3, 12, 27, 48, 75, 108, 147, 192, 243]
@@ -84,7 +84,7 @@ iterations need to be dillable. You might be able to make objects dillable anyho
     @parfor(range(10), (3,))
     def fun(i, a):
         sleep(1)
-        return a*i**2
+        return a * i ** 2
     print(fun)
 
     >> [0, 3, 12, 27, 48, 75, 108, 147, 192, 243]
@@ -93,7 +93,7 @@ iterations need to be dillable. You might be able to make objects dillable anyho
     @parfor(range(10), (3,), bar=False)
     def fun(i, a):
         sleep(1)
-        return a*i**2
+        return a * i ** 2
     print(fun)
 
     >> [0, 3, 12, 27, 48, 75, 108, 147, 192, 243]
@@ -110,7 +110,7 @@ use the `if __name__ == '__main__':` structure:
         @parfor(range(10), (3,))
         def fun(i, a):
             sleep(1)
-            return a*i**2
+            return a * i ** 2
         print(fun)
 
     >> [0, 3, 12, 27, 48, 75, 108, 147, 192, 243]    
@@ -124,7 +124,7 @@ or:
         @parfor(range(10), (3,))
         def fun(i, a):
             sleep(1)
-            return a*i**2
+            return a * i ** 2
         return fun
     
     if __name__ == '__main__':
@@ -140,7 +140,7 @@ pmap maps an iterator to a function like map does, but in parallel
     from time import sleep
     def fun(i, a):
         sleep(1)
-        return a*i**2
+        return a * i ** 2
     print(pmap(fun, range(10), (3,)))
 
     >> [0, 3, 12, 27, 48, 75, 108, 147, 192, 243]     
@@ -170,5 +170,5 @@ Split a long iterator in bite-sized chunks to parallelize
 
 ## `ParPool`
 More low-level accessibility to parallel execution. Submit tasks and request the result at any time,
-(although necessarily submit first, then request a specific task), use different functions and function
+(although to avoid breaking causality, submit first, then request), use different functions and function
 arguments for different tasks.

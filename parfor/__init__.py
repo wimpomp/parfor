@@ -655,10 +655,30 @@ def gmap(fun: Callable[[Iteration, Any, ...], Result], iterable: Iterable[Iterat
     if 'disable' not in bar_kwargs:
         bar_kwargs['disable'] = not bar
     if serial is True or (serial is None and len(iterable) < min(cpu_count, 4)) or Worker.nested:  # serial case
-        if callable(bar):
-            return sum([chunk_fun(c, *args, **kwargs) for c in ExternalBar(iterable, bar)], [])
+
+        def tqdm_chunks(chunks: Chunks, *args, **kwargs) -> Iterable[Iteration]:  # noqa
+            with tqdm(*args, **kwargs) as b:
+                for chunk, length in zip(chunks, chunks.lengths):  # noqa
+                    yield chunk
+                    b.update(length)
+
+        iterable = (ExternalBar(iterable, bar, sum(iterable.lengths)) if callable(bar)
+                    else tqdm_chunks(iterable, **bar_kwargs))
+        if is_chunked:
+            if yield_index:
+                for i, c in enumerate(iterable):
+                    yield i, chunk_fun(c, *args, **kwargs)
+            else:
+                for c in iterable:
+                    yield chunk_fun(c, *args, **kwargs)
         else:
-            return sum([chunk_fun(c, *args, **kwargs) for c in tqdm(iterable, **bar_kwargs)], [])
+            if yield_index:
+                for i, c in enumerate(iterable):
+                    yield i, chunk_fun(c, *args, **kwargs)[0]
+            else:
+                for c in iterable:
+                    yield chunk_fun(c, *args, **kwargs)[0]
+
     else:   # parallel case
         with ExitStack() as stack:
             if callable(bar):
