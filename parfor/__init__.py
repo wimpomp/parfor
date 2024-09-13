@@ -145,7 +145,7 @@ class Chunks(Iterable):
             number = int(cpu_count * ratio)
         self.iterators = [iter(arg) for arg in iterables]
         self.number_of_items = length
-        self.length = max(1, min(length, number))
+        self.length = min(length, number)
         self.lengths = [((i + 1) * self.number_of_items // self.length) - (i * self.number_of_items // self.length)
                         for i in range(self.length)]
 
@@ -674,10 +674,11 @@ def gmap(fun: Callable[[Iteration, Any, ...], Result], iterable: Iterable[Iterat
         else:
             if yield_index:
                 for i, c in enumerate(iterable):
-                    yield i, chunk_fun(c, *args, **kwargs)[0]
+                    for q in chunk_fun(c, *args, **kwargs):
+                        yield i, q
             else:
                 for c in iterable:
-                    yield chunk_fun(c, *args, **kwargs)[0]
+                    yield from chunk_fun(c, *args, **kwargs)
 
     else:   # parallel case
         with ExitStack() as stack:
@@ -710,18 +711,20 @@ def gmap(fun: Callable[[Iteration, Any, ...], Result], iterable: Iterable[Iterat
                     if yield_ordered:
                         if yield_index:
                             for i in range(len(iterable)):
-                                yield i, p[i][0]
+                                for q in p[i]:
+                                    yield i, q
                         else:
                             for i in range(len(iterable)):
-                                yield p[i][0]
+                                yield from p[i]
                     else:
                         if yield_index:
                             for _ in range(len(iterable)):
                                 i, n = p.get_newest()
-                                yield i, n[0]
+                                for q in n:
+                                    yield i, q
                         else:
                             for _ in range(len(iterable)):
-                                yield p.get_newest()[1][0]
+                                yield from p.get_newest()[1]
 
 
 @wraps(gmap)
