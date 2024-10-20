@@ -12,8 +12,13 @@ Tested on linux, Windows and OSX with python 3.10 and 3.12.
 - Easy to use
 - Using dill instead of pickle: a lot more objects can be used when parallelizing
 - Progress bars are built-in
+- Automatically use multithreading instead of multiprocessing when the GIL is disabled
 
 ## How it works
+This depends on whether the GIL is currently disabled or not. Disabling the GIL in Python is currently an experimental
+feature in Python3.13, and not the standard.
+
+### Python with GIL enabled
 The work you want parfor to do is divided over a number of processes. These processes are started by parfor and put
 together in a pool. This pool is reused when you want parfor to do more work, or shut down when no new work arrives
 within 10 minutes.
@@ -23,6 +28,12 @@ stored in a memory manager in serialized form (using dill) and the manager hands
 worker is requesting it. The manager deletes objects automatically when they're not needed anymore.
 
 When the work is done the result is sent back for collection in the main process.
+
+### Python with GIL disabled
+The work you want parfor to do is given to a new thread. These threads are started by parfor and put together in a pool.
+The threads and pool are not reused and closed automatically when done.
+
+When the work is done a message is sent to the main thread to update the status of the pool.
 
 ## Installation
 `pip install parfor`
@@ -35,12 +46,14 @@ an iterator.
 tqdm, dill
 
 ## Limitations
-Objects passed to the pool need to be dillable (dill needs to serialize them). Generators and SwigPyObjects are examples
-of objects that cannot be used. They can be used however, for the iterator argument when using parfor, but its
-iterations need to be dillable. You might be able to make objects dillable anyhow using `dill.register` or with
-`__reduce__`, `__getstate__`, etc.
+If you're using Python with the GIL enabaled, then objects passed to the pool need to be dillable (dill needs to
+serialize them). Generators and SwigPyObjects are examples of objects that cannot be used. They can be used however, for
+the iterator argument when using parfor, but its iterations need to be dillable. You might be able to make objects
+dillable anyhow using `dill.register` or with `__reduce__`, `__getstate__`, etc.
 
 ## Arguments
+To functions `parfor.parfor`, `parfor.pmap` and `parfor.gmap`.
+
 ### Required:
     fun:      function taking arguments: iteration from  iterable, other arguments defined in args & kwargs
     iterable: iterable or iterator from which an item is given to fun as a first argument
