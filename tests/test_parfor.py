@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from dataclasses import dataclass
 from os import getpid
 from time import sleep
@@ -8,6 +9,14 @@ from typing import Any, Iterator, Optional, Sequence
 import pytest
 
 from parfor import Chunks, ParPool, parfor, pmap
+
+try:
+    if sys._is_gil_enabled():  # noqa
+        gil = True
+    else:
+        gil = False
+except Exception:  # noqa
+    gil = True
 
 
 class SequenceIterator:
@@ -97,6 +106,7 @@ def test_pmap_chunks(serial) -> None:
     assert pmap(fun, chunks, (3,), {'k': 2}, serial=serial) == [[0, 6], [12, 18], [24, 30], [36, 42], [48, 54]]
 
 
+@pytest.mark.skipif(not gil, reason='test if gil enabled only')
 def test_id_reuse() -> None:
     def fun(i):
         return i[0].a
@@ -115,6 +125,7 @@ def test_id_reuse() -> None:
     assert all([i == j for i, j in enumerate(a)])
 
 
+@pytest.mark.skipif(not gil, reason='test if gil enabled only')
 @pytest.mark.parametrize('n_processes', (2, 4, 6))
 def test_n_processes(n_processes) -> None:
 
