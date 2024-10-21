@@ -208,8 +208,10 @@ def gmap(fun: Callable[[Iteration, Any, ...], Result], iterable: Iterable[Iterat
         def chunk_fun(iterable: Iterable, *args: Any, **kwargs: Any) -> list[Result]:  # noqa
             return [fun(iteration, *args, **kwargs) for iteration in iterable]
 
-    args = args or ()
-    kwargs = kwargs or {}
+    if args is None:
+        args = ()
+    if kwargs is None:
+        kwargs = {}
 
     if 'total' not in bar_kwargs:
         bar_kwargs['total'] = sum(iterable.lengths)
