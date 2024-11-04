@@ -37,6 +37,11 @@ class PoolSingleton:
         return select().PoolSingleton.close()
 
 
+class Task:
+    def __new__(cls, *args, **kwargs):
+        return select().Task(*args, **kwargs)
+
+
 class Chunks(Iterable):
     """ Yield successive chunks from lists.
         Usage: chunks(list0, list1, ...)
