@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import multiprocessing
 from collections import UserDict
 from contextlib import redirect_stderr, redirect_stdout
@@ -298,23 +299,26 @@ class PoolSingleton:
             new.is_alive = True
             new.handle = 0
             new.pools = {}
+            new.time_out = None
             cls.instance = new
         return cls.instance
 
     def __init__(self, n_processes: int = None, parpool: Parpool = None) -> None:  # noqa
         if parpool is not None:
             self.pools[parpool.id] = parpool
+            if self.time_out is not None:
+                self.time_out.cancel()
+            self.time_out = None
 
     def __getstate__(self) -> NoReturn:
         raise RuntimeError(f'Cannot pickle {self.__class__.__name__} object.')
-
-    # def __del__(self):
-    #     self.close()
 
     def remove_pool(self, pool_id: int) -> None:
         self.shared_memory.remove_pool(pool_id)
         if pool_id in self.pools:
             self.pools.pop(pool_id)
+        if len(self.pools) == 0:
+            self.time_out = asyncio.get_event_loop().call_later(600, self.close)  # noqa
 
     def error(self, error: Exception) -> NoReturn:
         self.close()
@@ -365,6 +369,8 @@ class PoolSingleton:
         if cls.instance is not None:
             instance = cls.instance
             cls.instance = None
+            if instance.time_out is not None:
+                instance.time_out.cancel()
 
             def empty_queue(queue):
                 try:
