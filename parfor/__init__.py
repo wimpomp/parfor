@@ -4,7 +4,7 @@ import sys
 from contextlib import ExitStack
 from functools import wraps
 from importlib.metadata import version
-from typing import Any, Callable, Generator, Iterable, Iterator, Sized, TypeVar
+from typing import Any, Callable, Generator, Iterable, Iterator, Sized
 from warnings import warn
 
 from tqdm.auto import tqdm
@@ -19,10 +19,6 @@ else:
 
 
 __version__ = version('parfor')
-
-
-Result = TypeVar('Result')
-Iteration = TypeVar('Iteration')
 
 
 class Chunks(Iterable):
@@ -106,11 +102,11 @@ class ExternalBar(Iterable):
                 self.callback(n)
 
 
-def gmap(fun: Callable[[Iteration, Any, ...], Result], iterable: Iterable[Iteration] = None,
+def gmap(fun: Callable[[Any, ...], Any], iterable: Iterable[Any] = None,
          args: tuple[Any, ...] = None, kwargs: dict[str, Any] = None, total: int = None, desc: str = None,
          bar: Bar | bool = True, terminator: Callable[[], None] = None, serial: bool = None, length: int = None,
          n_processes: int = None, yield_ordered: bool = True, yield_index: bool = False,
-         **bar_kwargs: Any) -> Generator[Result, None, None] | list[Result]:
+         **bar_kwargs: Any) -> Generator[Any, None, None]:
     """ map a function fun to each iteration in iterable
         use as a function: pmap
         use as a decorator: parfor
@@ -197,7 +193,7 @@ def gmap(fun: Callable[[Iteration, Any, ...], Result], iterable: Iterable[Iterat
         iterable = Chunks(iterable, ratio=5, length=total)
 
         @wraps(fun)
-        def chunk_fun(iterable: Iterable, *args: Any, **kwargs: Any) -> list[Result]:  # noqa
+        def chunk_fun(iterable: Iterable, *args: Any, **kwargs: Any) -> list[Any]:  # noqa
             return [fun(iteration, *args, **kwargs) for iteration in iterable]
 
     if args is None:
@@ -213,7 +209,7 @@ def gmap(fun: Callable[[Iteration, Any, ...], Result], iterable: Iterable[Iterat
         bar_kwargs['disable'] = not bar
     if serial is True or (serial is None and len(iterable) < min(cpu_count, 4)) or Worker.nested:  # serial case
 
-        def tqdm_chunks(chunks: Chunks, *args, **kwargs) -> Iterable[Iteration]:  # noqa
+        def tqdm_chunks(chunks: Chunks, *args, **kwargs) -> Iterable[Any]:  # noqa
             with tqdm(*args, **kwargs) as b:
                 for chunk, length in zip(chunks, chunks.lengths):  # noqa
                     yield chunk
@@ -284,13 +280,19 @@ def gmap(fun: Callable[[Iteration, Any, ...], Result], iterable: Iterable[Iterat
                                 yield from p.get_newest()[1]
 
 
-@wraps(gmap)
-def pmap(*args, **kwargs) -> list[Result]:
+def pmap(*args, **kwargs) -> list[Any]:
     return list(gmap(*args, **kwargs))
 
 
-@wraps(gmap)
-def parfor(*args: Any, **kwargs: Any) -> Callable[[Callable[[Iteration, Any, ...], Result]], list[Result]]:
-    def decfun(fun: Callable[[Iteration, Any, ...], Result]) -> list[Result]:
+def parfor(*args: Any, **kwargs: Any) -> Callable[[Callable[[Any, ...], Any]], list[Any]]:
+    def decfun(fun: Callable[[Any, ...], Any]) -> list[Any]:
         return pmap(fun, *args, **kwargs)
     return decfun
+
+
+try:
+    parfor.__doc__ = pmap.__doc__ = gmap.__doc__
+    pmap.__annotations__ = gmap.__annotations__ | pmap.__annotations__
+    parfor.__annotations__ = {key: value for key, value in pmap.__annotations__.items() if key != 'fun'}
+except AttributeError:
+    pass

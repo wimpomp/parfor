@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import queue
 import threading
+from os import cpu_count
 from typing import Any, Callable, Hashable, NoReturn, Optional
 
-from .common import Bar, cpu_count
+from .common import Bar
 
 
 class Worker:
@@ -15,6 +16,8 @@ class Worker:
 
 
 class PoolSingleton:
+    cpu_count = cpu_count()
+
     def __init__(self, *args, **kwargs):
         pass
 
@@ -64,7 +67,7 @@ class ParPool:
         self.fun = fun
         self.args = args
         self.kwargs = kwargs
-        self.n_processes = n_processes or cpu_count
+        self.n_processes = n_processes or PoolSingleton.cpu_count
         self.threads = {}
 
     def __getstate__(self) -> NoReturn:

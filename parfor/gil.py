@@ -4,13 +4,13 @@ import asyncio
 import multiprocessing
 from collections import UserDict
 from contextlib import redirect_stderr, redirect_stdout
-from os import devnull, getpid
+from os import cpu_count, devnull, getpid
 from time import time
 from traceback import format_exc
 from typing import Any, Callable, Hashable, NoReturn, Optional
 from warnings import warn
 
-from .common import Bar, cpu_count
+from .common import Bar
 from .pickler import dumps, loads
 
 
@@ -275,16 +275,17 @@ class PoolSingleton:
         new pool. The pool will close itself after 10 minutes of idle time. """
 
     instance = None
+    cpu_count = cpu_count()
 
     def __new__(cls, n_processes: int = None, *args: Any, **kwargs: Any) -> PoolSingleton:
         # restart if any workers have shut down or if we want to have a different number of processes
         if cls.instance is not None:
             if (cls.instance.n_workers.value < cls.instance.n_processes or
-                    cls.instance.n_processes != (n_processes or cpu_count)):
+                    cls.instance.n_processes != (n_processes or cls.cpu_count)):
                 cls.instance.close()
         if cls.instance is None or not cls.instance.is_alive:
             new = super().__new__(cls)
-            new.n_processes = n_processes or cpu_count
+            new.n_processes = n_processes or cls.cpu_count
             new.instance = new
             new.is_started = False
             ctx = Context()
@@ -437,14 +438,14 @@ class Worker:
         last_active_time = time()
         while not self.event.is_set() and time() - last_active_time < 600:
             try:
-                task = self.queue_in.get(True, 0.02)
-                try:
-                    self.add_to_queue('started', task.pool_id, task.handle, pid)
-                    with redirect_stdout(open(devnull, 'w')), redirect_stderr(open(devnull, 'w')):
+                with redirect_stdout(open(devnull, 'w')), redirect_stderr(open(devnull, 'w')):
+                    task = self.queue_in.get(True, 0.02)
+                    try:
+                        self.add_to_queue('started', task.pool_id, task.handle, pid)
                         self.add_to_queue('done', task.pool_id, task(self.shared_memory))
-                except Exception:  # noqa
-                    self.add_to_queue('task_error', task.pool_id, task.handle, format_exc())
-                    self.event.set()
+                    except Exception:  # noqa
+                        self.add_to_queue('task_error', task.pool_id, task.handle, format_exc())
+                        self.event.set()
                 self.shared_memory.garbage_collect()
                 last_active_time = time()
             except (multiprocessing.queues.Empty, KeyboardInterrupt):  # noqa
