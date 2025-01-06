@@ -6,9 +6,10 @@ from os import getpid
 from time import sleep
 from typing import Any, Iterator, Optional, Sequence
 
+import numpy as np
 import pytest
 
-from parfor import Chunks, ParPool, parfor, pmap
+from parfor import Chunks, ParPool, SharedArray, parfor, pmap
 
 try:
     if sys._is_gil_enabled():  # noqa
@@ -135,3 +136,14 @@ def test_n_processes(n_processes) -> None:
         return getpid()
 
     assert len(set(fun)) == n_processes
+
+
+def test_shared_array() -> None:
+    def fun(i, a):
+        a[i] = i
+
+    with SharedArray(100, int) as arr:
+        pmap(fun, range(len(arr)), (arr,))
+        b = np.array(arr)
+
+    assert np.all(b == np.arange(len(arr)))

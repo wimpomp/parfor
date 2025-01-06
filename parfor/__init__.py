@@ -10,7 +10,7 @@ from warnings import warn
 from tqdm.auto import tqdm
 
 from . import gil, nogil
-from .common import Bar, cpu_count
+from .common import Bar, SharedArray, cpu_count
 
 if hasattr(sys, '_is_gil_enabled') and not sys._is_gil_enabled():  # noqa
     from .nogil import ParPool, PoolSingleton, Task, Worker
