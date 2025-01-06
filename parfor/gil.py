@@ -319,7 +319,10 @@ class PoolSingleton:
         if pool_id in self.pools:
             self.pools.pop(pool_id)
         if len(self.pools) == 0:
-            self.time_out = asyncio.get_event_loop().call_later(600, self.close)  # noqa
+            try:
+                self.time_out = asyncio.get_running_loop().call_later(600, self.close)  # noqa
+            except RuntimeError:
+                self.time_out = asyncio.new_event_loop().call_later(600, self.close)  # noqa
 
     def error(self, error: Exception) -> NoReturn:
         self.close()
