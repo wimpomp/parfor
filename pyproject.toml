@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "parfor"
-version = "2025.1.0"
+version = "2026.1.0"
 description = "A package to mimic the use of parfor as done in Matlab."
 authors = ["Wim Pomp <wimpomp@gmail.com>"]
 license = "GPLv3"
@@ -16,6 +16,10 @@ pytest = { version = "*", optional = true }
 
 [tool.poetry.extras]
 test = ["pytest", "numpy"]
+
+[tool.ruff]
+line-length = 119
+indent-width = 4
 
 [tool.isort]
 line_length = 119
