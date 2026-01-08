@@ -1,6 +1,6 @@
 [project]
 name = "parfor"
-version = "2026.1.2"
+version = "2026.1.3"
 description = "A package to mimic the use of parfor as done in Matlab."
 authors = [
     { name = "Wim Pomp-Pervova", email = "wimpomp@gmail.com" }

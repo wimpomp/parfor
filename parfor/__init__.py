@@ -398,9 +398,15 @@ class ParPool:
     def finalize_task(self, task: Task) -> Any:
         code, *args = task.status
         if task.out:
-            print(task.out, end="")
+            if hasattr(self.bar, "write"):
+                self.bar.write(task.out, end="")
+            else:
+                print(task.out, end="")
         if task.err:
-            print(task.err, end="")
+            if hasattr(self.bar, "write"):
+                self.bar.write(task.err, end="")
+            else:
+                print(task.err, end="")
         getattr(self, code)(task, *args)
         self.tasks.pop(task.handle)
         return task.result
