@@ -253,7 +253,7 @@ class Task:
         try:
             return False, ray.put(item)
         except Exception:  # noqa
-            return True, ray.put(dumps(item))
+            return True, ray.put(dumps(item, recurse=True))
 
     @property
     def fun(self) -> Callable[[Any, ...], Any]:
