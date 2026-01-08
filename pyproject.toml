@@ -1,21 +1,25 @@
-[tool.poetry]
+[project]
 name = "parfor"
 version = "2026.1.0"
 description = "A package to mimic the use of parfor as done in Matlab."
-authors = ["Wim Pomp <wimpomp@gmail.com>"]
-license = "GPLv3"
+authors = [
+    { name = "Wim Pomp-Pervova", email = "wimpomp@gmail.com" }
+]
+license = { text = "MIT"}
 readme = "README.md"
 keywords = ["parfor", "concurrency", "multiprocessing", "parallel"]
+requires-python = ">=3.10"
+dependencies = [
+    "numpy",
+    "tqdm >= 4.50.0",
+    "ray",
+]
+
+[project.urls]
 repository = "https://github.com/wimpomp/parfor"
 
-[tool.poetry.dependencies]
-python = "^3.10"
-tqdm = ">=4.50.0"
-dill = ">=0.3.0"
-pytest = { version = "*", optional = true }
-
-[tool.poetry.extras]
-test = ["pytest", "numpy"]
+[project.optional-dependencies]
+test = ["pytest"]
 
 [tool.ruff]
 line-length = 119
@@ -23,7 +27,3 @@ indent-width = 4
 
 [tool.isort]
 line_length = 119
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"

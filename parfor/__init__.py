@@ -8,7 +8,19 @@ from functools import wraps
 from importlib.metadata import version
 from multiprocessing.shared_memory import SharedMemory
 from traceback import format_exc
-from typing import Any, Callable, Generator, Iterable, Iterator, Sized, Hashable, NoReturn, Optional, Protocol, Sequence
+from typing import (
+    Any,
+    Callable,
+    Generator,
+    Iterable,
+    Iterator,
+    Sized,
+    Hashable,
+    NoReturn,
+    Optional,
+    Protocol,
+    Sequence,
+)
 
 import numpy as np
 import ray
@@ -78,7 +90,6 @@ class SharedArray(np.ndarray):
         new = cls(array.shape, array.dtype)
         new[:] = array[:]
         return new
-
 
 
 class Chunks(Iterable):
@@ -190,7 +201,7 @@ def worker(task):
             warnings.simplefilter("ignore", category=FutureWarning)
             try:
                 task()
-                task.status = "done",
+                task.status = ("done",)
             except Exception:  # noqa
                 task.status = "task_error", format_exc()
     except KeyboardInterrupt:  # noqa
