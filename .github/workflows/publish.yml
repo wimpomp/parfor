@@ -14,7 +14,8 @@ jobs:
         os: [ ubuntu-latest, windows-latest, macOS-latest ]
 
     steps:
-      - uses: actions/checkout@v6
+      - name: Checkout
+        uses: actions/checkout@v6
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v6
         with:
@@ -28,16 +29,20 @@ jobs:
     needs: [ pytest ]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - name: Checkout
+        uses: actions/checkout@v6
       - name: Build sdist
-        uses: PyO3/maturin-action@v1
+        uses: actions/setup-python@v6
         with:
-          command: sdist
-          args: --out dist
+          python-version: "3.12"
+      - name: Install build
+        run: pip install build
+      - name: Build a binary wheel and a source tarball
+        run: python -m build
       - name: Upload sdist
         uses: actions/upload-artifact@v6
         with:
-          name: wheels-sdist
+          name: sdist
           path: dist
 
   release:
@@ -45,6 +50,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: [ sdist ]
     steps:
-      - uses: actions/download-artifact@v7
+      - name: Download artifacts
+        uses: actions/download-artifact@v7
+        with:
+          name: sdist
+          path: dist
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
