@@ -4,36 +4,18 @@
 Used to parallelize for-loops using parfor in Matlab? This package allows you to do the same in python.
 Take any normal serial but parallelizable for-loop and execute it in parallel using easy syntax.
 Don't worry about the technical details of using the multiprocessing module, race conditions, queues,
-parfor handles all that. 
+parfor handles all that. Now powered by [ray](https://pypi.org/project/ray/).
 
 Tested on linux, Windows and OSX with python 3.10 and 3.12.
 
 ## Why is parfor better than just using multiprocessing?
 - Easy to use
-- Using dill instead of pickle: a lot more objects can be used when parallelizing
 - Progress bars are built-in
-- Automatically use multithreading instead of multiprocessing when the GIL is disabled
+- Retry the task in the main process upon failure for easy debugging
 
 ## How it works
-This depends on whether the GIL is currently disabled or not. Disabling the GIL in Python is currently an experimental
-feature in Python3.13, and not the standard.
-
-### Python with GIL enabled
-The work you want parfor to do is divided over a number of processes. These processes are started by parfor and put
-together in a pool. This pool is reused when you want parfor to do more work, or shut down when no new work arrives
-within 10 minutes.
-
-A handle to each bit of work is put in a queue from which the workers take work. The objects needed to do the work are
-stored in a memory manager in serialized form (using dill) and the manager hands out an object to a worker when the
-worker is requesting it. The manager deletes objects automatically when they're not needed anymore.
-
-When the work is done the result is sent back for collection in the main process.
-
-### Python with GIL disabled
-The work you want parfor to do is given to a new thread. These threads are started by parfor and put together in a pool.
-The threads and pool are not reused and closed automatically when done.
-
-When the work is done a message is sent to the main thread to update the status of the pool.
+[Ray](https://pypi.org/project/ray/) does all the heavy lifting. Parfor now is just a wrapper around ray, adding
+some ergonomics.
 
 ## Installation
 `pip install parfor`
@@ -43,13 +25,7 @@ Parfor decorates a functions and returns the result of that function evaluated i
 an iterator.
 
 ## Requires
-tqdm, dill
-
-## Limitations
-If you're using Python with the GIL enabaled, then objects passed to the pool need to be dillable (dill needs to
-serialize them). Generators and SwigPyObjects are examples of objects that cannot be used. They can be used however, for
-the iterator argument when using parfor, but its iterations need to be dillable. You might be able to make objects
-dillable anyhow using `dill.register` or with `__reduce__`, `__getstate__`, etc.
+numpy, ray, tqdm
 
 ## Arguments
 To functions `parfor.parfor`, `parfor.pmap` and `parfor.gmap`.
@@ -66,11 +42,11 @@ To functions `parfor.parfor`, `parfor.pmap` and `parfor.gmap`.
     bar:    bool enable progress bar,
                 or a callback function taking the number of passed iterations as an argument
     serial: execute in series instead of parallel if True, None (default): let pmap decide
-    length: deprecated alias for total
     n_processes: number of processes to use,
         the parallel pool will be restarted if the current pool does not have the right number of processes
     yield_ordered: return the result in the same order as the iterable
     yield_index: return the index of the result too
+    allow_output: allow output from subprocesses
     **bar_kwargs: keyword arguments for tqdm.tqdm
 
 ### Return
@@ -185,3 +161,6 @@ Split a long iterator in bite-sized chunks to parallelize
 More low-level accessibility to parallel execution. Submit tasks and request the result at any time,
 (although to avoid breaking causality, submit first, then request), use different functions and function
 arguments for different tasks.
+
+## `SharedArray`
+A numpy arrow that can be shared among processes.
