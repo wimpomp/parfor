@@ -12,6 +12,8 @@ Tested on linux, Windows and OSX with python 3.10 and 3.12.
 - Easy to use
 - Progress bars are built-in
 - Retry the task in the main process upon failure for easy debugging
+- Using a modified version of dill when ray fails to serialize an object: 
+  a lot more objects can be used when parallelizing
 
 ## How it works
 [Ray](https://pypi.org/project/ray/) does all the heavy lifting. Parfor now is just a wrapper around ray, adding

@@ -28,6 +28,8 @@ import ray
 from numpy.typing import ArrayLike, DTypeLike
 from tqdm.auto import tqdm
 
+from .pickler import dumps, loads
+
 
 __version__ = version("parfor")
 cpu_count = int(os.cpu_count())
@@ -229,7 +231,7 @@ class Task:
         self.handle = handle
         self.fun = fun
         self.args = args
-        self.kwargs = kwargs
+        self.kwargs = kwargs or {}
         self.name = fun.__name__ if hasattr(fun, "__name__") else None
         self.done = False
         self.result = None
@@ -239,37 +241,51 @@ class Task:
         self.status = "starting"
         self.allow_output = allow_output
 
+    @staticmethod
+    def get(item: tuple[bool, Any]) -> Any:
+        if item[0]:
+            return loads(ray.get(item[1]))
+        else:
+            return ray.get(item[1])
+
+    @staticmethod
+    def put(item: Any) -> tuple[bool, Any]:
+        try:
+            return False, ray.put(item)
+        except Exception:  # noqa
+            return True, ray.put(dumps(item))
+
     @property
     def fun(self) -> Callable[[Any, ...], Any]:
-        return ray.get(self._fun)
+        return self.get(self._fun)
 
     @fun.setter
     def fun(self, fun: Callable[[Any, ...], Any]):
-        self._fun = ray.put(fun)
+        self._fun = self.put(fun)
 
     @property
     def args(self) -> tuple[Any, ...]:
-        return tuple([ray.get(arg) for arg in self._args])
+        return tuple([self.get(arg) for arg in self._args])
 
     @args.setter
     def args(self, args: tuple[Any, ...]) -> None:
-        self._args = [ray.put(arg) for arg in args]
+        self._args = [self.put(arg) for arg in args]
 
     @property
     def kwargs(self) -> dict[str, Any]:
-        return {key: ray.get(value) for key, value in self._kwargs.items()}
+        return {key: self.get(value) for key, value in self._kwargs.items()}
 
     @kwargs.setter
     def kwargs(self, kwargs: dict[str, Any]) -> None:
-        self._kwargs = {key: ray.put(value) for key, value in kwargs.items()}
+        self._kwargs = {key: self.put(value) for key, value in kwargs.items()}
 
     @property
     def result(self) -> Any:
-        return ray.get(self._result)
+        return self.get(self._result)
 
     @result.setter
     def result(self, result: Any) -> None:
-        self._result = ray.put(result)
+        self._result = self.put(result)
 
     def __call__(self) -> Task:
         if not self.done:
@@ -324,6 +340,9 @@ class ParPool:
             barlength=barlength,
         )
 
+    def close(self) -> None:
+        pass
+
     def add_task(
         self,
         fun: Callable[[Any, ...], Any] = None,
@@ -363,8 +382,12 @@ class ParPool:
         """Request result and delete its record. Wait if result not yet available."""
         if handle not in self:
             raise ValueError(f"No handle: {handle} in pool")
-        task = ray.get(self.tasks[handle].future)
-        return self.finalize_task(task)
+        task = self.tasks[handle]
+        if task.future is None:
+            return task.result
+        else:
+            task = ray.get(self.tasks[handle].future)
+            return self.finalize_task(task)
 
     def __contains__(self, handle: Hashable) -> bool:
         return handle in self.tasks
@@ -387,10 +410,13 @@ class ParPool:
         while True:
             if self.tasks:
                 for handle, task in self.tasks.items():
-                    if handle in self.bar_lengths:
+                    if handle in self.tasks:
                         try:
-                            task = ray.get(task.future, timeout=0.01)
-                            return task.handle, self.finalize_task(task)
+                            if task.future is None:
+                                return task.handle, task.result
+                            else:
+                                task = ray.get(task.future, timeout=0.01)
+                                return task.handle, self.finalize_task(task)
                         except ray.exceptions.GetTimeoutError:
                             pass
 
@@ -421,7 +447,9 @@ class PoolSingleton:
             cls.instance = super().__new__(cls)
             cls.instance.n_processes = n_processes
             if ray.is_initialized():
-                warnings.warn("not setting n_processes because parallel pool was already initialized")
+                if cls.instance.n_processes != n_processes:
+                    warnings.warn(f"not setting n_processes={n_processes} because parallel pool was already initialized, "
+                                  f"probably with n_processes={cls.instance.n_processes}")
             else:
                 os.environ["RAY_ACCEL_ENV_VAR_OVERRIDE_ON_ZERO"] = "0"
                 ray.init(num_cpus=n_processes, logging_level=logging.ERROR, log_to_driver=False)
