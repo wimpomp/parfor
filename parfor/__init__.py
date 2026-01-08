@@ -54,7 +54,7 @@ class SharedArray(np.ndarray):
         if isinstance(shm, str):
             shm = SharedMemory(shm)
         elif shm is None:
-            shm = SharedMemory(create=True, size=np.prod(shape) * np.dtype(dtype).itemsize)  # type: ignore
+            shm = SharedMemory(create=True, size=int(np.prod(shape) * np.dtype(dtype).itemsize))  # type: ignore
         new = super().__new__(cls, shape, dtype, shm.buf, offset, strides, order)
         new.shm = shm
         return new
