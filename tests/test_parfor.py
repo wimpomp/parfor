@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from os import getpid
+from time import sleep
 from typing import Any, Iterator, Optional, Sequence
 
 import numpy as np
@@ -141,6 +143,16 @@ def test_id_reuse() -> None:
     assert all([i == j for i, j in enumerate(a)])
 
 
+@pytest.mark.parametrize("n_processes", (2, 4, 6))
+def test_n_processes(n_processes) -> None:
+    @parfor(range(12), n_processes=n_processes)
+    def fun(i):  # noqa
+        sleep(0.25)
+        return getpid()
+
+    assert len(set(fun)) <= n_processes
+
+
 def test_shared_array() -> None:
     def fun(i, a):
         a[i] = i
@@ -150,3 +162,13 @@ def test_shared_array() -> None:
         b = np.array(arr)
 
     assert np.all(b == np.arange(len(arr)))
+
+
+def test_nesting() -> None:
+    def a(i):
+        return i**2
+
+    def b(i):
+        return pmap(a, range(i, i + 50))
+
+    assert pmap(b, range(10)) == [[i**2 for i in range(j, j + 50)] for j in range(10)]

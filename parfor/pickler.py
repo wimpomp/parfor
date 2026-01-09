@@ -23,12 +23,13 @@ class CouldNotBePickled:
 
 
 class Pickler(dill.Pickler):
-    """ Overload dill to ignore unpicklable parts of objects.
-        You probably didn't want to use these parts anyhow.
-        However, if you did, you'll have to find some way to make them picklable.
+    """Overload dill to ignore unpicklable parts of objects.
+    You probably didn't want to use these parts anyhow.
+    However, if you did, you'll have to find some way to make them picklable.
     """
+
     def save(self, obj: Any, save_persistent_id: bool = True) -> None:
-        """ Copied from pickle and amended. """
+        """Copied from pickle and amended."""
         self.framer.commit_frame()
 
         # Check for persistent id (defined by a subclass)
@@ -58,7 +59,7 @@ class Pickler(dill.Pickler):
 
             # Check private dispatch table if any, or else
             # copyreg.dispatch_table
-            reduce = getattr(self, 'dispatch_table', copyreg.dispatch_table).get(t)
+            reduce = getattr(self, "dispatch_table", copyreg.dispatch_table).get(t)
             if reduce is not None:
                 rv = reduce(obj)
             else:
@@ -78,8 +79,7 @@ class Pickler(dill.Pickler):
                         if reduce is not None:
                             rv = reduce()
                         else:
-                            raise PicklingError("Can't pickle %r object: %r" %
-                                                (t.__name__, obj))
+                            raise PicklingError("Can't pickle %r object: %r" % (t.__name__, obj))
                 except Exception:  # noqa
                     rv = CouldNotBePickled.reduce(obj)
 
@@ -98,8 +98,7 @@ class Pickler(dill.Pickler):
         # Assert that it returned an appropriately sized tuple
         length = len(rv)
         if not (2 <= length <= 6):
-            raise PicklingError("Tuple returned by %s must have "
-                                "two to six elements" % reduce)
+            raise PicklingError("Tuple returned by %s must have two to six elements" % reduce)
 
         # Save the reduce() output and finally memoize the object
         try:
@@ -108,10 +107,11 @@ class Pickler(dill.Pickler):
             self.save_reduce(obj=obj, *CouldNotBePickled.reduce(obj))
 
 
-def dumps(obj: Any, protocol: str = None, byref: bool = None, fmode: str = None, recurse: bool = True,
-          **kwds: Any) -> bytes:
+def dumps(
+    obj: Any, protocol: str = None, byref: bool = None, fmode: str = None, recurse: bool = True, **kwds: Any
+) -> bytes:
     """pickle an object to a string"""
-    protocol = dill.settings['protocol'] if protocol is None else int(protocol)
+    protocol = dill.settings["protocol"] if protocol is None else int(protocol)
     _kwds = kwds.copy()
     _kwds.update(dict(byref=byref, fmode=fmode, recurse=recurse))
     with BytesIO() as file:
