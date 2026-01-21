@@ -1,4 +1,4 @@
-[![pytest](https://github.com/wimpomp/parfor/actions/workflows/pytest.yml/badge.svg)](https://github.com/wimpomp/parfor/actions/workflows/pytest.yml)
+[![pytest](https://github.com/wimpomp/parfor/actions/workflows/pytest.yml/badge.svg)](https://github.com/wimpomp/parfor/actions/workflows/publish.yml)
 
 # Parfor
 Used to parallelize for-loops using parfor in Matlab? This package allows you to do the same in python.

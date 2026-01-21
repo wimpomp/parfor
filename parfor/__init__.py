@@ -478,6 +478,9 @@ class ParPool:
 class PoolSingleton:
     cpu_count: int = os.cpu_count()
 
+    def close(self) -> None:
+        pass
+
 
 class Worker:
     nested: bool = False
