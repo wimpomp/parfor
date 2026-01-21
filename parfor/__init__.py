@@ -199,7 +199,7 @@ def get_worker(n_processes) -> RemoteFunction:
 
     if not ray.is_initialized():
         os.environ["RAY_ACCEL_ENV_VAR_OVERRIDE_ON_ZERO"] = "0"
-        ray.init(logging_level=logging.ERROR, log_to_driver=False)
+        ray.init(logging_level=logging.ERROR, log_to_driver=False, include_dashboard=False)
 
     def worker(task):
         try:
