@@ -1,11 +1,11 @@
 [project]
 name = "parfor"
-version = "2026.2.1"
+version = "2026.2.2"
 description = "A package to mimic the use of parfor as done in Matlab."
 authors = [
     { name = "Wim Pomp-Pervova", email = "wimpomp@gmail.com" }
 ]
-license = { text = "MIT"}
+license = { text = "MIT" }
 readme = "README.md"
 keywords = ["parfor", "concurrency", "multiprocessing", "parallel"]
 requires-python = ">=3.10"
